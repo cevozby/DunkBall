@@ -8,6 +8,7 @@ TagManager:
   - Ground
   - Pota
   - Zone
+  - Basket
   layers:
   - Default
   - TransparentFX
