@@ -26,6 +26,7 @@ public class GoalManager : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        //Basket girdiði an efektleri çalýþtýr ve oyunu 2.5 saniye sonra yeniden baþlat
         if (other.gameObject.CompareTag("Basket"))
         {
             goalCheck = true;

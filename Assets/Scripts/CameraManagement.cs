@@ -13,6 +13,7 @@ public class CameraManagement : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //Top ve pota arasýndaki merkez nokta
         center = (pota.position.z - ball.position.z)/2;
         yNewOffset = yOffset;
         zNewOffset = zOffset;
@@ -21,11 +22,13 @@ public class CameraManagement : MonoBehaviour
     // Update is called once per frame
     void LateUpdate()
     {
+        //Top merkezin gerisindeyse kamera topu sabit bir þekilde takip edecek
         if(ball.position.z > center)
         {
             transform.position = new Vector3(ball.position.x, yOffset, ball.position.z + zOffset);
             transform.LookAt(pota);
         }
+        //Top merkezi geçtikten sonra topun durumuna göre aktif olarak deðiþecek
         else if(ball.position.z <= center)
         {
             zNewOffset = zOffset + ((center - ball.position.z) / divide);
