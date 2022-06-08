@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 public class GoalManager : MonoBehaviour
 {
     public static int goalNumber;
+    public static bool goalCheck;
     public ParticleSystem confetti;
     public ParticleSystem confetti2;
     public ParticleSystem confetti3;
@@ -14,7 +15,7 @@ public class GoalManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        goalCheck = false;
     }
 
     // Update is called once per frame
@@ -27,6 +28,7 @@ public class GoalManager : MonoBehaviour
     {
         if (other.gameObject.CompareTag("Basket"))
         {
+            goalCheck = true;
             confetti.Play();
             confetti2.Play();
             confetti3.Play();

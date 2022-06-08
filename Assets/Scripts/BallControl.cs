@@ -21,13 +21,15 @@ public class BallControl : MonoBehaviour
     public ParticleSystem smokeEffect;
 
 
-    bool zoneCheck;
+    bool zoneCheck, shotCheck;
     public Transform goal;
 
     //Baþlangýç noktasýndan bitiþ noktasýna gitme hýzý, saniye cinsinden
     [SerializeField] float journeyTime;
 
     float startTime;
+
+    public Vector3 distance;
 
     // Start is called before the first frame update
     void Start()
@@ -51,19 +53,18 @@ public class BallControl : MonoBehaviour
         {
             Movement();
         }
-        if(timeInterval <= 0.15f && endPos.y > startPos.y)
+        if(timeInterval <= 0.20f && endPos.y > startPos.y)
         {
             ThrowBall();
+            endPos = Vector3.zero;
+            startPos = Vector3.zero;
+            timeInterval = 0;
         }
         
         
     }
 
-    private void Update()
-    {
-        
-    }
-
+    //Topun sürekli zýplamasýný saðlayan fonksiyon
     void BallJumping()
     {
         if (isGround)
@@ -73,6 +74,7 @@ public class BallControl : MonoBehaviour
         }
     }
 
+    //Topu oyun içerisinde kontrol etme
     void Movement()
     {
         if(Input.touchCount > 0)
@@ -88,29 +90,33 @@ public class BallControl : MonoBehaviour
 
     void ThrowBall()
     {
-        if(throwCheck && !zoneCheck)
+        //Eðer basket alaný içerisinde deðilse topu ileriye fýrlat
+        if(throwCheck && !zoneCheck && !GoalManager.goalCheck)
         {
             ballRB.AddForce(Vector3.up * throwUpForse);
             ballRB.AddForce(Vector3.forward * -throwForwardForse);
             throwCheck = false;
-            endPos = Vector3.zero;
-            startPos = Vector3.zero;
+            
         }
-        else if (throwCheck && zoneCheck)
+        //Basket alaný içindeyse top baskete girecek
+        else if (throwCheck && zoneCheck && !GoalManager.goalCheck)
         {
             Basket();
+            throwCheck = false;
         }
 
     }
 
     void Calculator()
     {
+        //Parmaðýmýz deðdiði anýn pozisyonu ve zamanýný bulma
         if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
         {
             touchTimeStart = Time.time;
             startPos = Input.GetTouch(0).position;
         }
 
+        //Parmaðýmýzý kaldýrdýktan sonraki pozisyonu ve baþlangýç ile bitiþ arasýndaki zamaný hesaplama
         if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Ended)
         {
             touchTimeFinish = Time.time;
@@ -118,10 +124,6 @@ public class BallControl : MonoBehaviour
             timeInterval = touchTimeFinish - touchTimeStart;
 
             endPos = Input.GetTouch(0).position;
-
-            //direction = startPos - endPos;
-
-            //ballRB.AddForce(new Vector3(0f, 1f, 1f) * -throwForse);
         }
     }
 
@@ -131,11 +133,12 @@ public class BallControl : MonoBehaviour
         Vector3 center = (transform.position + goal.position) * 0.5f;
 
         //Yay þeklinde yapmak için merkez noktasýný aþaðýya doðru indirme
-        center -= Vector3.up;
+        center -= distance;
 
         Vector3 startCenter = transform.position - center;
         Vector3 endCenter = goal.position - center;
 
+        //Ýki nokta arasýndaki yolculuk için geçen sürenin istenen süreye bölünmesi
         float fracComplete = (Time.time - startTime) / journeyTime;
 
         transform.position = Vector3.Slerp(startCenter, endCenter, fracComplete);
@@ -147,9 +150,11 @@ public class BallControl : MonoBehaviour
         
         if (collision.gameObject.CompareTag("Ground"))
         {
+            //Top yere deðdiði zaman çalýþacak olan toz efekti
             smokeEffect.transform.position = new Vector3(transform.position.x, smokeEffect.transform.position.y, transform.position.z);
             smokeEffect.Play();
             
+            //Topun yere deðmesi ve tekrardan fýrlatýlmaya hazýr olup olmadýðý kontrolü
             isGround = true;
             throwCheck = true;
         }
