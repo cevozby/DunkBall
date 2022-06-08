@@ -37,9 +37,10 @@ public class GoalManager : MonoBehaviour
 
     IEnumerator RestartWorld()
     {
+        yield return new WaitForSeconds(2.5f);
         SceneManager.LoadScene(0);
 
-        yield return new WaitForSeconds(1.5f);
+        
     }
 
 }

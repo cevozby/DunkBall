@@ -14,7 +14,7 @@ public class BallControl : MonoBehaviour
     bool isGround, throwCheck;
 
     //[Range(0.05f, 1f)]
-    public float throwForse = 0.3f;
+    public float throwUpForse = 0.3f, throwForwardForse;
 
     Rigidbody ballRB;
 
@@ -51,7 +51,7 @@ public class BallControl : MonoBehaviour
         {
             Movement();
         }
-        if(timeInterval <= 0.15f && endPos.y > startPos.y && endPos.y - startPos.y <=365f)
+        if(timeInterval <= 0.15f && endPos.y > startPos.y)
         {
             ThrowBall();
         }
@@ -90,8 +90,8 @@ public class BallControl : MonoBehaviour
     {
         if(throwCheck && !zoneCheck)
         {
-            ballRB.AddForce(Vector3.up * throwForse);
-            ballRB.AddForce(Vector3.forward * -throwForse/100f);
+            ballRB.AddForce(Vector3.up * throwUpForse);
+            ballRB.AddForce(Vector3.forward * -throwForwardForse);
             throwCheck = false;
             endPos = Vector3.zero;
             startPos = Vector3.zero;
