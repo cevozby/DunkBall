@@ -1,20 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class BallControl : MonoBehaviour
 {
     private Touch touch;
-    [SerializeField] float speedModifier;
+    [SerializeField] float speedX, speedZ, speed;
 
     Vector3 startPos, endPos, direction;
     float touchTimeStart, touchTimeFinish, timeInterval;
 
     [SerializeField] float jumpForce;
-    bool isGround, throwCheck;
-
-    //[Range(0.05f, 1f)]
-    public float throwUpForse = 0.3f, throwForwardForse;
+    [SerializeField] float basketForce, throwForce;
+    bool isGround, throwCheck, moveCheck, obstacleCheck;
+    bool underOfBasket, backOfBasket;
+    [SerializeField] Transform under, back;
 
     Rigidbody ballRB;
 
@@ -24,87 +25,42 @@ public class BallControl : MonoBehaviour
     bool zoneCheck, shotCheck;
     public Transform goal;
 
-    //Baþlangýç noktasýndan bitiþ noktasýna gitme hýzý, saniye cinsinden
-    [SerializeField] float journeyTime;
 
     float startTime;
 
-    public Vector3 distance;
+    [SerializeField] float basketTime, distance, throwTime;
+    Sequence seq;
 
     // Start is called before the first frame update
     void Start()
     {
         isGround = false;
         zoneCheck = false;
-        //journeyTime = 1f;
-
         ballRB = GetComponent<Rigidbody>();
         startTime = Time.time;
-        //speedModifier = 0.01f;
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        Calculator();
         BallJumping();
-
-        if (throwCheck)
+        if(moveCheck && throwCheck)
+        {
+            moveCheck = false;
+            ThrowBall();
+        }
+        else if(moveCheck && !throwCheck)
         {
             Movement();
         }
-        if(timeInterval <= 0.20f && endPos.y > startPos.y)
+    }
+    private void Update()
+    {
+        if (moveCheck)
         {
-            ThrowBall();
-            endPos = Vector3.zero;
-            startPos = Vector3.zero;
-            timeInterval = 0;
+            Calculator();
         }
         
-        
-    }
-
-    //Topun sürekli zýplamasýný saðlayan fonksiyon
-    void BallJumping()
-    {
-        if (isGround)
-        {
-            ballRB.AddForce(Vector3.up * jumpForce);
-            isGround = false;
-        }
-    }
-
-    //Topu oyun içerisinde kontrol etme
-    void Movement()
-    {
-        if(Input.touchCount > 0)
-        {
-            touch = Input.GetTouch(0);
-            if(touch.phase == TouchPhase.Moved)
-            {
-                transform.position = new Vector3(transform.position.x + touch.deltaPosition.x * -speedModifier, transform.position.y, 
-                    transform.position.z + touch.deltaPosition.y * -speedModifier);
-            }
-        }
-    }
-
-    void ThrowBall()
-    {
-        //Eðer basket alaný içerisinde deðilse topu ileriye fýrlat
-        if(throwCheck && !zoneCheck && !GoalManager.goalCheck)
-        {
-            ballRB.AddForce(Vector3.up * throwUpForse);
-            ballRB.AddForce(Vector3.forward * -throwForwardForse);
-            throwCheck = false;
-            
-        }
-        //Basket alaný içindeyse top baskete girecek
-        else if (throwCheck && zoneCheck && !GoalManager.goalCheck)
-        {
-            Basket();
-            throwCheck = false;
-        }
-
     }
 
     void Calculator()
@@ -125,25 +81,85 @@ public class BallControl : MonoBehaviour
 
             endPos = Input.GetTouch(0).position;
         }
+        //Topu fýrlatmak için kontrol
+        if (timeInterval <= 0.20f && endPos.y > startPos.y)
+        {
+            throwCheck = true;
+            endPos = Vector3.zero;
+            startPos = Vector3.zero;
+            timeInterval = 0;
+        }
+    }
+
+    #region BallMovement
+    //Topun sürekli zýplamasýný saðlayan fonksiyon
+    void BallJumping()
+    {
+        if (isGround)
+        {
+            ballRB.AddForce(Vector3.up * jumpForce);
+            isGround = false;
+        }
+    }
+    //Topu oyun içerisinde kontrol etme
+    void Movement()
+    {
+        if (Input.touchCount > 0)
+        {
+            touch = Input.GetTouch(0);
+            if (touch.phase == TouchPhase.Moved)
+            {
+                ballRB.velocity = new Vector3(touch.deltaPosition.normalized.x * -speedX, ballRB.velocity.y, 
+                    touch.deltaPosition.normalized.y * -speedZ); 
+            }
+        }
+        else
+        {
+            ballRB.velocity = new Vector3(0f, ballRB.velocity.y, 0f);
+        }
+    }
+
+    void ThrowBall()
+    {
+        //Eðer basket alaný içerisinde deðilse topu ileriye fýrlat
+        if (!zoneCheck && !GoalManager.goalCheck)
+        {
+            Vector3 target = new Vector3(transform.position.x, 0.2f, transform.position.z - distance);
+            transform.DOJump(target, throwForce, 1, throwTime);
+            throwCheck = false;
+
+        }
+        //Basket alaný içindeyse top baskete girecek
+        else if (zoneCheck && !GoalManager.goalCheck)
+        {
+            Basket();
+            throwCheck = false;
+        }
+
     }
 
     void Basket()
     {
-        //Baþlangýç ve bitiþ pozisyonlarýnýn merkez noktasý
+        seq = DOTween.Sequence();
         Vector3 center = (transform.position + goal.position) * 0.5f;
+        center = (center + goal.position) * 0.5f;
 
-        //Yay þeklinde yapmak için merkez noktasýný aþaðýya doðru indirme
-        center -= distance;
-
-        Vector3 startCenter = transform.position - center;
-        Vector3 endCenter = goal.position - center;
-
-        //Ýki nokta arasýndaki yolculuk için geçen sürenin istenen süreye bölünmesi
-        float fracComplete = (Time.time - startTime) / journeyTime;
-
-        transform.position = Vector3.Slerp(startCenter, endCenter, fracComplete);
-        transform.position += center;
+        if (underOfBasket)
+        {
+            transform.DOJump(under.position, basketForce/2, 1, basketTime);
+        }
+        else if (backOfBasket)
+        {
+            transform.DOJump(back.position, basketForce, 1, basketTime);
+        }
+        else
+        {
+            seq.Append(transform.DOJump(goal.position, basketForce, 1, basketTime));
+            seq.Append(transform.DOMoveY(0.2f, 0.75f));
+        }
     }
+
+    #endregion
 
     private void OnCollisionEnter(Collision collision)
     {
@@ -154,13 +170,12 @@ public class BallControl : MonoBehaviour
             smokeEffect.transform.position = new Vector3(transform.position.x, smokeEffect.transform.position.y, transform.position.z);
             smokeEffect.Play();
             
-            //Topun yere deðmesi ve tekrardan fýrlatýlmaya hazýr olup olmadýðý kontrolü
+            //Topun yere deðmesi ve tekrardan hareket etmeye hazýr olup olmadýðý kontrolü
             isGround = true;
-            throwCheck = true;
+            moveCheck = true;
         }
     }
 
-    
 
     private void OnTriggerStay(Collider other)
     {
@@ -168,6 +183,14 @@ public class BallControl : MonoBehaviour
         if (other.gameObject.CompareTag("Zone"))
         {
             zoneCheck = true;
+        }
+        if (other.gameObject.CompareTag("UnderofBasket"))
+        {
+            underOfBasket = true;
+        }
+        if (other.gameObject.CompareTag("Backofbasket"))
+        {
+            backOfBasket = true;
         }
     }
 
@@ -177,6 +200,14 @@ public class BallControl : MonoBehaviour
         if (other.gameObject.CompareTag("Zone"))
         {
             zoneCheck = false;
+        }
+        if (other.gameObject.CompareTag("UnderofBasket"))
+        {
+            underOfBasket = false;
+        }
+        if (other.gameObject.CompareTag("Backofbasket"))
+        {
+            backOfBasket = false;
         }
     }
 

@@ -10,6 +10,7 @@ public class GoalManager : MonoBehaviour
     public ParticleSystem confetti;
     public ParticleSystem confetti2;
     public ParticleSystem confetti3;
+    [SerializeField] GameObject obstacle;
 
 
     // Start is called before the first frame update
@@ -30,6 +31,7 @@ public class GoalManager : MonoBehaviour
         if (other.gameObject.CompareTag("Basket"))
         {
             goalCheck = true;
+            obstacle.SetActive(false);
             confetti.Play();
             confetti2.Play();
             confetti3.Play();

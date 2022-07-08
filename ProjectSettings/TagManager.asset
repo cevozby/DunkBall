@@ -9,6 +9,9 @@ TagManager:
   - Pota
   - Zone
   - Basket
+  - Obstacle
+  - Backofbasket
+  - UnderofBasket
   layers:
   - Default
   - TransparentFX

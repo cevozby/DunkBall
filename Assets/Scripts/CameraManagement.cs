@@ -14,7 +14,7 @@ public class CameraManagement : MonoBehaviour
     void Start()
     {
         //Top ve pota arasýndaki merkez nokta
-        center = (pota.position.z - ball.position.z)/2;
+        center = (pota.position.z + ball.position.z)/2;
         yNewOffset = yOffset;
         zNewOffset = zOffset;
     }
@@ -27,6 +27,7 @@ public class CameraManagement : MonoBehaviour
         {
             transform.position = new Vector3(ball.position.x, yOffset, ball.position.z + zOffset);
             transform.LookAt(pota);
+            //transform.LookAt(new Vector3(0f, pota.position.y, 0f));
         }
         //Top merkezi geçtikten sonra topun durumuna göre aktif olarak deðiþecek
         else if(ball.position.z <= center)
